@@ -1,95 +1,96 @@
 ASSIGNMENT 2 SOLUTION:
 
 
+
 import random
 import string
 
-def load_words():
-    # Load words from the words.txt file
+def load_words(filename):
+    """Load words from the file and return them as a list."""
     try:
-        with open("words.txt", "r") as file:
-            word_list = file.read().split()
-        return word_list
+        with open(filename, 'r') as file:
+            return file.read().split()
     except FileNotFoundError:
-        print("Error: 'words.txt' file not found.")
+        print("Error: words.txt file not found.")
         return []
 
-def choose_word(word_list):
-    return random.choice(word_list) if word_list else ""
+def choose_word(wordlist):
+    """Choose a random word from the wordlist."""
+    return random.choice(wordlist) if wordlist else None
+
+def is_word_guessed(secret_word, letters_guessed):
+    """Check if all letters of the secret word have been guessed."""
+    return all(letter in letters_guessed for letter in secret_word)
+
+def get_guessed_word(secret_word, letters_guessed):
+    """Return the current guessed state of the word."""
+    return ''.join(letter if letter in letters_guessed else '-' for letter in secret_word)
+
+def get_available_letters(letters_guessed):
+    """Return the letters that have not been guessed yet."""
+    return ''.join(letter for letter in string.ascii_lowercase if letter not in letters_guessed)
 
 def hangman():
-    word_list = load_words()
-    
-    if not word_list:
-        return  # Exit the game if no words are available
-    
-    secret_word = choose_word(word_list).lower()
-    unique_letters = set(secret_word)
-    
+    # Sample word list embedded directly into the program
+    sample_words = "apple banana orange grape cherry"
+    wordlist = sample_words.split()
+
+    secret_word = choose_word(wordlist).lower()
+    if not secret_word:
+        print("No word available for the game.")
+        return
+
     guesses_remaining = 10
     warnings_remaining = 3
-    letters_guessed = set()
-    vowels = {'a', 'e', 'i', 'o', 'u'}
-    
+    letters_guessed = []
+
     print("Welcome to Hangman!")
     print(f"I am thinking of a word that is {len(secret_word)} letters long.")
-    
+    print("-------------")
+
     while guesses_remaining > 0:
-        print("-" * 20)
-        print(f"Guesses remaining: {guesses_remaining}")
-        print(f"Warnings remaining: {warnings_remaining}")
-        print("Letters not yet guessed:", ''.join(sorted(set(string.ascii_lowercase) - letters_guessed)))
-        
-        # Display the current guessed word
-        guessed_word = ''.join([char if char in letters_guessed else '-' for char in secret_word])
-        print(f"Current word: {guessed_word}")
-        
-        # Check if the word has been guessed
-        if unique_letters <= letters_guessed:
-            print(f"Congratulations, you guessed the word: {secret_word}!")
-            score = guesses_remaining * len(unique_letters)
-            print(f"Your score is: {score}")
+        if is_word_guessed(secret_word, letters_guessed):
+            print(f"Congratulations, you won! The word was '{secret_word}'.")
             return
-        
-        # Get user's guess
+
+        print(f"You have {guesses_remaining} guesses left.")
+        print(f"Available letters: {get_available_letters(letters_guessed)}")
         guess = input("Please guess a letter: ").lower()
-        
-        # Handle invalid input
-        if not guess.isalpha() or len(guess) != 1:
+
+        if not guess.isalpha():  # Non-alphabet input
             if warnings_remaining > 0:
                 warnings_remaining -= 1
-                print(f"Invalid input! You have {warnings_remaining} warnings left.")
+                print(f"Oops! That is not a valid letter. You have {warnings_remaining} warnings left.")
             else:
                 guesses_remaining -= 1
-                print(f"Invalid input! You lost a guess. Guesses remaining: {guesses_remaining}")
+                print(f"Oops! That is not a valid letter. You have no warnings left, so you lose one guess.")
+            print("-------------")
             continue
-        
-        # Handle already guessed letters
-        if guess in letters_guessed:
+
+        if guess in letters_guessed:  # Already guessed
             if warnings_remaining > 0:
                 warnings_remaining -= 1
-                print(f"You've already guessed that letter! Warnings left: {warnings_remaining}")
+                print(f"Oops! You've already guessed that letter. You have {warnings_remaining} warnings left.")
             else:
                 guesses_remaining -= 1
-                print(f"You've already guessed that letter! Guesses remaining: {guesses_remaining}")
+                print(f"Oops! You've already guessed that letter. You have no warnings left, so you lose one guess.")
+            print("-------------")
             continue
-        
-        # Add guess to the set of guessed letters
-        letters_guessed.add(guess)
-        
-        # Check if the guess is in the secret word
+
+        letters_guessed.append(guess)
+
         if guess in secret_word:
-            print(f"Good guess: {guessed_word}")
+            print(f"Good guess: {get_guessed_word(secret_word, letters_guessed)}")
         else:
-            if guess in vowels:
+            if guess in 'aeiou':  # Vowels cost 2 guesses
                 guesses_remaining -= 2
-                print(f"The letter '{guess}' is not in the word. You lost 2 guesses.")
-            else:
+            else:  # Consonants cost 1 guess
                 guesses_remaining -= 1
-                print(f"The letter '{guess}' is not in the word. You lost 1 guess.")
-        
-    # If the loop ends, the player has run out of guesses
-    print(f"Sorry, you've run out of guesses. The word was: {secret_word}. Better luck next time!")
+            print(f"Oops! That letter is not in my word: {get_guessed_word(secret_word, letters_guessed)}")
+
+        print("-------------")
+
+    print(f"Sorry, you ran out of guesses. The word was '{secret_word}'.")
 
 # Run the game
 hangman()
